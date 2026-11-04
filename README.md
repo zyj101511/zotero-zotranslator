@@ -6,13 +6,10 @@
 
 ## 功能
 
-- PDF 划词后默认自动查询，结果显示在 Zotero 原生选词弹窗；可在设置中关闭自动翻译，改为点击“翻译”按钮。
-- 英文单词或短语显示中文释义、词性、英文定义、双语例句、词形、标签及英美音标。词典提供发音地址时显示“美音”和“英音”按钮。
-- 词典结果出现后并行预加载可用的英美音频。同一段文字可重复播放而不重新下载；查询另一段文字时清除旧音频缓存。
-- 阅读器右侧提供输入框和“查词”“翻译”两个按钮，分别直接调用 Cambridge 与 DeepLX。
-- 服务模式可设为两者都用、仅 Cambridge 或仅 DeepLX。默认模式下，词典未找到词条或请求失败时回退 DeepLX。
-
-词典接口返回的字段因词条而异。插件目前**不提供同义词、反义词，也不支持中文词头反查英文**。扫描版 PDF 若没有可选中的文字层，无法直接划词查询。
+- PDF 划词自动查词或翻译，并在选词弹窗显示结果。
+- 用 Cambridge 查询单词和短语，播放英美发音；用 DeepLX 翻译句子。
+- 在阅读器侧栏输入文字，点击“查词”或“翻译”。
+- 可在设置中关闭自动翻译，或选择只用 Cambridge、只用 DeepLX。
 
 ## 安装
 
@@ -71,18 +68,30 @@ curl -X POST http://localhost:6119/translate -H 'Content-Type: application/json'
 
 1. 在开始菜单打开**任务计划程序**，选择“创建任务”。在“常规”中命名为 `DeepLX`，选择“**不管用户是否登录都要运行**”。
 2. 在“触发器”中新建“**启动时**”。
-3. 在“操作”中新建“启动程序”，按实际安装位置填写：
+3. 为避免 `node.exe` 弹出控制台窗口，在 DeepLX-Serverless 目录中新建 `start-hidden.vbs`，内容如下。先运行 `(Get-Command node).Source`，将脚本中的 `nodePath` 改成实际的 `node.exe` 路径：
+
+   ```vbscript
+   Set shell = CreateObject("WScript.Shell")
+   Set fso = CreateObject("Scripting.FileSystemObject")
+   projectDir = fso.GetParentFolderName(WScript.ScriptFullName)
+   nodePath = "C:\Program Files\nodejs\node.exe"
+   shell.CurrentDirectory = projectDir
+   command = Chr(34) & nodePath & Chr(34) & " " & Chr(34) & fso.BuildPath(projectDir, "src\server.js") & Chr(34)
+   shell.Run command, 0, True
+   ```
+
+4. 在“操作”中新建“启动程序”，按实际安装位置填写：
 
    | 项目 | 示例值 |
    | --- | --- |
-   | 程序或脚本 | `C:\Program Files\nodejs\node.exe` |
-   | 添加参数 | `src\server.js` |
-   | 起始于 | DeepLX-Serverless 所在目录 |
+   | 程序或脚本 | `C:\Windows\System32\wscript.exe` |
+   | 添加参数 | `"C:\path\to\DeepLX-Serverless\start-hidden.vbs"` |
+   | 起始于 | DeepLX-Serverless 所在目录的完整路径 |
 
-4. 在“设置”中取消“如果任务运行时间超过 3 天则停止”；笔记本用户还应检查“条件”中是否限制为接通电源才运行。保存时 Windows 可能要求输入账户密码。
-5. 右键新任务选择“运行”，用上面的测试请求确认成功。要停止自动启动，可在任务计划程序中禁用该任务。
+5. 在“设置”中取消“如果任务运行时间超过 3 天则停止”；笔记本用户还应检查“条件”中是否限制为接通电源才运行。保存时 Windows 可能要求输入账户密码。
+6. 右键新任务选择“运行”，用上面的测试请求确认服务可用且没有控制台窗口。要停止自动启动，可在任务计划程序中禁用该任务。
 
-可在 PowerShell 运行 `(Get-Command node).Source` 查找实际的 `node.exe` 路径。“起始于”应填写 **DeepLX-Serverless 目录的完整路径**。Windows 任务计划程序支持[启动时触发](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks-create)和[设置工作目录](https://learn.microsoft.com/en-us/windows/win32/taskschd/execaction-workingdirectory)。
+脚本中的 `0` 表示隐藏窗口，`True` 表示持续等待服务进程，便于任务计划程序显示任务仍在运行。“起始于”应填写 **DeepLX-Serverless 目录的完整路径**。任务计划程序里的“隐藏”选项只隐藏任务列表中的条目，不能用来隐藏控制台窗口。Windows 任务计划程序支持[启动时触发](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks-create)和[设置工作目录](https://learn.microsoft.com/en-us/windows/win32/taskschd/execaction-workingdirectory)。
 
 ### Linux：systemd
 
