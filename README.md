@@ -24,7 +24,7 @@
 
 ## 部署并启动 DeepLX-Serverless
 
-DeepLX-Serverless 是独立项目，zotranslator 和下文的 Manggo 插件可以共用同一个服务。先安装 [Git](https://git-scm.com/downloads) 和 **Node.js 22 或更新版本**，再按系统运行：
+DeepLX-Serverless 是独立项目。先安装 [Git](https://git-scm.com/downloads) 和 **Node.js 22 或更新版本**，再按系统运行：
 
 **Windows（PowerShell）：**
 
@@ -61,16 +61,103 @@ Linux / macOS：
 curl -X POST http://localhost:6119/translate -H 'Content-Type: application/json' -d '{"text":"你好，世界！","source_lang":"zh","target_lang":"en"}'
 ```
 
-返回结果包含 `data` 译文字段即表示服务可用。需要开机后自动运行时，可参考 [Manggo DeepLX 项目的 Windows 任务计划程序、Linux systemd 和 macOS launchd 配置](https://github.com/zyj101511/manggo-deepl#开机后台启动-deeplx)。如果把服务部署到另一台设备，请将插件里的 `localhost` 改为那台设备可访问的地址；远程部署建议使用 HTTPS。接口与其他部署方式见 [DeepLX-Serverless 项目说明](https://github.com/guobao2333/DeepLX-Serverless)。
+返回结果包含 `data` 译文字段即表示服务可用。如果把服务部署到另一台设备，请将插件里的 `localhost` 改为那台设备可访问的地址；远程部署建议使用 HTTPS。接口与其他部署方式见 [DeepLX-Serverless 项目说明](https://github.com/guobao2333/DeepLX-Serverless)。
 
-## 在 Manggo 中使用 DeepLX
+## 开机静默启动 DeepLX
 
-同一套 DeepLX-Serverless 服务也可以供 [Manggo 的 DeepLX 翻译插件](https://github.com/zyj101511/manggo-deepl) 使用。它支持自动识别源语言，也可以在 Manggo 中手动指定源语言和目标语言。
+先确认手动启动和测试都成功，再关闭手动运行的服务，按系统选择一种方法。以下配置直接运行 `node src/server.js`，与项目的 `npm run start` [启动脚本](https://github.com/guobao2333/DeepLX-Serverless/blob/main/package.json)相同；启动后无需保持终端窗口开启。
 
-1. 下载 Manggo 项目中的 [`manggo-deeplx.mplugin`](https://github.com/zyj101511/manggo-deepl/blob/main/manggo-deeplx.mplugin)。
-2. 在 Manggo 的“插件管理”中安装该文件。
-3. 到“翻译服务”设置中添加“DeepLX 翻译”。服务运行在本机时，地址保持默认的 `http://localhost:6119` 即可；部署在其他设备时，填写该设备的可访问地址。
-4. 翻译时可选择“自动识别”源语言，或手动选择源语言和目标语言。使用时需保持 DeepLX 服务运行。
+### Windows：任务计划程序
+
+1. 在开始菜单打开**任务计划程序**，选择“创建任务”。在“常规”中命名为 `DeepLX`，选择“**不管用户是否登录都要运行**”。
+2. 在“触发器”中新建“**启动时**”。
+3. 在“操作”中新建“启动程序”，按实际安装位置填写：
+
+   | 项目 | 示例值 |
+   | --- | --- |
+   | 程序或脚本 | `C:\Program Files\nodejs\node.exe` |
+   | 添加参数 | `src\server.js` |
+   | 起始于 | DeepLX-Serverless 所在目录 |
+
+4. 在“设置”中取消“如果任务运行时间超过 3 天则停止”；笔记本用户还应检查“条件”中是否限制为接通电源才运行。保存时 Windows 可能要求输入账户密码。
+5. 右键新任务选择“运行”，用上面的测试请求确认成功。要停止自动启动，可在任务计划程序中禁用该任务。
+
+可在 PowerShell 运行 `(Get-Command node).Source` 查找实际的 `node.exe` 路径。“起始于”应填写 **DeepLX-Serverless 目录的完整路径**。Windows 任务计划程序支持[启动时触发](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks-create)和[设置工作目录](https://learn.microsoft.com/en-us/windows/win32/taskschd/execaction-workingdirectory)。
+
+### Linux：systemd
+
+适用于使用 systemd 的发行版。先用 `whoami`、`pwd` 和 `command -v node` 查出用户名、DeepLX 项目绝对路径和 Node 可执行文件路径。创建服务文件：
+
+```bash
+sudo nano /etc/systemd/system/deeplx.service
+```
+
+填入以下内容，并把 `YOUR_USER`、项目目录和 `/usr/bin/node` 改成实际值：
+
+```ini
+[Unit]
+Description=DeepLX-Serverless
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/home/YOUR_USER/DeepLX-Serverless
+ExecStart=/usr/bin/node /home/YOUR_USER/DeepLX-Serverless/src/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+保存后启用、立即启动并检查状态：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now deeplx
+sudo systemctl status deeplx
+```
+
+查看报错用 `journalctl -u deeplx -e`；停止并取消自启动用 `sudo systemctl disable --now deeplx`。如果 Node 通过 nvm 安装，`ExecStart` 必须填写 `command -v node` 显示的完整路径。[systemd 的工作目录说明](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html)。
+
+### macOS：launchd
+
+此方法在**用户登录后**自动后台启动。先在 DeepLX 项目目录运行 `pwd` 和 `command -v node`，记下两个绝对路径。创建配置文件：
+
+```bash
+mkdir -p ~/Library/LaunchAgents
+nano ~/Library/LaunchAgents/com.zyj101511.deeplx.plist
+```
+
+粘贴以下内容，并替换 `YOUR_USER` 和 `/opt/homebrew/bin/node`；Intel Mac 的 Node 位置也可能是 `/usr/local/bin/node`：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.zyj101511.deeplx</string>
+  <key>ProgramArguments</key><array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/YOUR_USER/DeepLX-Serverless/src/server.js</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/YOUR_USER/DeepLX-Serverless</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/tmp/deeplx.out.log</string>
+  <key>StandardErrorPath</key><string>/tmp/deeplx.err.log</string>
+</dict></plist>
+```
+
+保存后加载；以后每次登录会自动启动：
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.zyj101511.deeplx.plist
+launchctl print gui/$(id -u)/com.zyj101511.deeplx
+```
+
+停止并取消当前登录会话中的启动：`launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.zyj101511.deeplx.plist`；如需永久取消，再删除该 plist 文件。报错可看 `/tmp/deeplx.err.log`。[Apple 的 LaunchAgents 说明](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)。
 
 ## 设置
 
