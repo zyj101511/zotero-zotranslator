@@ -16,7 +16,7 @@
 
 ## 安装
 
-1. 下载 [`zotranslator-1.0.0.xpi`](./zotranslator-1.0.0.xpi)。
+1. 下载 [`zotranslator-x.x.x.xpi`](./zotranslator-1.0.0.xpi)。
 2. 在 Zotero 10 中打开“工具 → 插件”，点击右上角齿轮，选择“从文件安装插件”，选中 `.xpi`。
 3. 打开 PDF，选中单词或句子测试。使用 DeepLX 前，先按下节启动服务；只用 Cambridge 查词则不需要启动 DeepLX。
 
@@ -93,8 +93,6 @@ curl -X POST http://localhost:6119/translate -H 'Content-Type: application/json'
 **为什么短词最后显示 DeepLX 译文？**  默认模式会先查询 Cambridge。词典未找到词条、请求失败或等待超过 30 秒时，才会回退 DeepLX。选中的英文不超过五个词且没有句末标点时，插件才把它当作词或短语。
 
 **为什么“翻译”一直显示请求失败？**  确认 DeepLX-Serverless 已启动，设置中的地址可访问。`localhost` 指运行 Zotero 的这台电脑；服务若部署在另一台设备，需要填写那台设备的可访问地址。
-
-**为什么发音按钮不可用？**  只有上游词典返回了相应地区的发音地址，插件才显示按钮。音频预加载完成前按钮不可点击；下载失败时按钮会显示“重试”，悬停可查看错误。播放使用内存中的音频，不会保存音频文件；播放结束后释放临时播放地址，查询另一段文字时清除已下载的缓存。
 
 **需要 Cambridge 或 DeepL 官方 API Key 吗？**  不需要。词典使用第三方接口；DeepLX 需要自行运行或部署。
 
