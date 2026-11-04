@@ -1,14 +1,15 @@
 # zotranslator
 
-一个用于 Zotero 10 的 PDF 划词翻译插件。选中英文单词或短语时优先查询 Cambridge 词典，句子交给 DeepLX 翻译；也可以在阅读器右侧手动查词或翻译。默认目标语言是简体中文。
+一个用于 Zotero 10 的 PDF 划词翻译插件。选中英文单词或短语时优先查询 Cambridge 词典，句子交给 DeepLX 翻译；也可以在阅读器右侧手动查词或翻译。PDF 划词翻译默认译为简体中文。
 
 > **非官方项目。**本插件与 Zotero、Cambridge Dictionary、Cambridge University Press & Assessment、DeepL 官方均无隶属或授权关系。词典数据来自第三方 Cambridge 接口；DeepLX 使用非官方翻译接口，并非 DeepL 官方 API。插件包不包含 DeepLX 服务。
 
 ## 功能
 
 - PDF 划词自动查词或翻译，并在选词弹窗显示结果。
-- 用 Cambridge 查询单词和短语，播放英美发音；用 DeepLX 翻译句子。
-- 在阅读器侧栏输入文字，点击“查词”或“翻译”。
+- Cambridge 只支持英文到中文的单词、短语查询，并可播放英美发音。
+- DeepLX 支持多语言翻译。侧栏“翻译”可选源语言和目标语言；源语言默认自动识别，目标语言默认简体中文。
+- 在阅读器侧栏输入文字，点击“查词”或“翻译”；语言选项仅作用于 DeepLX 翻译。
 - 可在设置中关闭自动翻译，或选择只用 Cambridge、只用 DeepLX。
 
 ## 安装
