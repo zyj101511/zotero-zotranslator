@@ -1,5 +1,5 @@
 # zotranslator
-
+[![Zotero 中文社区 · 已收录](https://zotero-chinese.com/badges/listed.svg)](https://zotero-chinese.com/plugins/)
 一个用于 Zotero 10 的 PDF 划词翻译插件。选中英文单词或短语时优先查询 Cambridge 词典，句子交给 DeepLX 翻译；也可以在阅读器右侧手动查词或翻译。PDF 划词翻译默认译为简体中文。
 
 > **非官方项目。**本插件与 Zotero、Cambridge Dictionary、Cambridge University Press & Assessment、DeepL 官方均无隶属或授权关系。词典数据来自第三方 Cambridge 接口；DeepLX 使用非官方翻译接口，并非 DeepL 官方 API。插件包不包含 DeepLX 服务。
